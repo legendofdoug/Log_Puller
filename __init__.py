@@ -15,18 +15,18 @@ def main():
     #print (host, user, ssh_key_filepath, remote_path)
     #print (os.path.exists(ssh_key_filepath))
     #print(os.path.exists(remote_path))
-
+    print ("START")
     selection = menu.menu_selection()
-    func_options = {
-        1: fai(),
-        2: qpn(),
-        3: rackid(),
-        4: mbsn(),
-        5: specificIssue(),
-    }
-    if (selection == "q" or selection == "quit" or selection == "exit"):
+    print ("SELECTION DONE")
+    print (selection)
+    if selection == "1":
+        fai()
+    elif selection == "q" or selection == "quit":
         exit()
-    func_options[selection]
+    else:
+        print ("Invalid Selection")
+    print ("SELECTION DONE 2")
+    #func_options[selection]
 
 
 

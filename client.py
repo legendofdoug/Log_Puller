@@ -11,11 +11,12 @@ import logging
 class RemoteClient:
     """Client to interact with a remote host via SSH & SCP."""
 
-    def __init__(self, gitServer, pxe, user, pxe_user, ssh_key_filepath, known_hosts_filepath, remote_path):
+    def __init__(self, gitServer, pxe, user, pxe_user, ssh_key_filepath, known_hosts_filepath, remote_path, gitServer2):
         self.gitServer = gitServer #gitserver ip
         self.pxe = pxe #pxe server ip
         self.user = user #gitserver username
         self.pxe_user = pxe_user #pxe server username
+        self.gitServer2 = gitServer2 #second git Server IP for sending files back.
         self.known_hosts_filepath = known_hosts_filepath
         self.ssh_key_filepath = ssh_key_filepath #local windows machine path to the ssh id_rsa
         self.remote_path = remote_path #place to put logs
