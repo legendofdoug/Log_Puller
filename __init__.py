@@ -25,7 +25,7 @@ def main():
         exit()
     else:
         print ("Invalid Selection")
-    print ("SELECTION DONE 2")
+
     #func_options[selection]
 
 

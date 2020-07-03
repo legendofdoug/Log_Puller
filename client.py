@@ -88,6 +88,8 @@ class RemoteClient:
             stdin, stdout, stderr = self.client.exec_command(cmd)
             stdout.channel.recv_exit_status()
             response = stdout.readlines()
+            print("EXECUTING IN GIT\n"
+                  "______________________________")
             print (cmd)
             for line in response:
                 #print(f'INPUT: {cmd} | OUTPUT: {line}')
@@ -107,6 +109,8 @@ class RemoteClient:
         """
         self.conn = self._connect2()
         output = []
+        print("EXECUTING IN PXE\n"
+              "______________________________")
         for cmd in commands:
             stdin, stdout, stderr = self.remote_client.exec_command(cmd)
             stdout.channel.recv_exit_status()

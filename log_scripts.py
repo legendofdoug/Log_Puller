@@ -4,6 +4,24 @@ sys.path.insert(1, r"./sensitive template files/" )
 from config import *
 import menu
 from client import RemoteClient
+import re
+import socket
+import getpass
+
+#function below is from https://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+
 
 def fai():
     print ("______________________________________________\n"
@@ -21,7 +39,9 @@ def fai():
 
     remote = RemoteClient(gitServer, pxe, user, pxe_user, ssh_key_filepath, known_hosts_filepath, remote_path, gitServer2)
     #create the log folder in the gitserver
-    #remote.execute_cmd_git([f"mkdir {remote_path}{MBSN}_logs"])
+    qpn = input("What is the QPN for the Rack? ")
+    remote.execute_cmd_git([f'mkdir {remote_path}{project}'])
+    remote.execute_cmd_git([f"mkdir {remote_path}{project}/{MBSN}_{qpn}_logs"])
     #find the most recent PRETEST LOG
     current_time = datetime.datetime.now() #find the current time
     year = current_time.year
@@ -54,60 +74,50 @@ def fai():
         11: "Nov",
         12: "Dec",
     }
-    """
-    dirs = []
-    while dirs == [] or dirs == None:
-        dirs = remote.execute_cmd_pxe([f"find /RACKLOG/{project}/{year}/ -name {MBSN}"])
-        if dirs  == [] or dirs == None:
-            print ("NO Results found! Try another SN!")
-            MBSN = input("Enter the MBSN or whatever the log files use:  ")
-    """
+
 
 
     tests = ["PRETEST", "RUNIN", "FST"]
     for test in tests: #cycle through the tests to find each one.
         done_flag = False #flag for breaking out of loop
-        #cycle through current month first. starting with the current date then working backwards.
-        current_month = current_time.month
-        while done_flag == False:
-            dirs = []
+        dirs = []
 
-            while dirs == [] or dirs == None:#select all current month dirs
-                dirs = remote.execute_cmd_pxe([f"find /RACKLOG/{project}/{year}/{months_r[current_month]}* -name {MBSN}"])
-                if dirs == [] or dirs == None:
-                    print("NO Results found for this month! Trying last month")
-                    current_month = current_month - 1
-                if current_month == 0:
-                    print("No results for this year for this SN!")
+        while dirs == [] or dirs == None:#select all current month dirs
+            dirs = remote.execute_cmd_pxe([f"find /RACKLOG/{project}/{year}/* -name {MBSN}"])
+            if dirs == []:
+                #if we don't find anything
+                print("No results for this year for this SN!")
+                MBSN = input("Enter in a different SN: ")
+                continue
+            my_dates = []
+            # sorts by date
+
+            reg = re.compile(f'/RACKLOG/{project}/{year}/...\d\d/{MBSN}')
+            #print (reg)
+            dirs = [string for string in dirs if re.match(reg, string)]
+            dirs.sort(key=lambda date: datetime.datetime.strptime(date, f'/RACKLOG/{project}/{year}/%b%d/{MBSN}'), reverse= True)
+            print (dirs)
+            pass_dir = []
+            for dir in dirs:
+                pass_dir = remote.execute_cmd_pxe([f"find {dir}/{test} -iname *pass*"])
+                if pass_dir != []:
+                    remote.execute_cmd_pxe([f"scp -r {dir}/{test} {user}@{gitServer2}:{remote_path}{project}/{MBSN}_{qpn}_logs/"])
+                    #print (f"scp -r {dir}/{test} {user}@{gitServer2}:{remote_path}{MBSN}_logs/\n")
                     break
-                #print (dirs)
-                dir_days = []
-                for dir in dirs:  # this will cycle through all the available directories
-                    #check if the logs have the current test.
-                    test_check = remote.execute_cmd_pxe([f"find {log} -iname {test}"])
-                    if pass_check == []:
-                        pass
-                    dir_date = dir.replace(f"/RACKLOG/{project}/{year}/", "")
-                    dir_date = dir_date.replace(f"/{MBSN}", "")
-                    dir_month = dir_date[0:3]
-                    dir_day = dir_date[3:]
-                    dir_days.append(int(dir_day)) #this will allow me to sort the days that have passed
-                dir_days = dir_days.sort(reverse= True)
-                remote.execute_cmd_pxe([f"scp -r {log} {user}@{gitServer2}:{remote_path}{MBSN}_logs/")
-                #print (dir, dir_month, dir_day)
-
-                test_logs = remote.execute_cmd_pxe([f"find {dir} -iname {test}"])
-                if test_logs == None or test_logs == []:
-                    pass
                 else:
-                    for log in test_logs:
-                        folder_dir = remote.execute_cmd_pxe([f"find {log} -iname *pass*"])  # only pick pass folders
-                        if folder_dir != [] or folder_dir != None:
-                            remote.execute_cmd_pxe([f"scp -r {log} {user}@{gitServer2}:{remote_path}{MBSN}_logs/")
-                            break
-                print (test_logs)
-                done_flag = True
-                break
+                    print("Nothing was found\n")
+
+    print("All Done!")
+    #below scp needs modification
+    os.system("pscp -r doug@192.168.66.28:/home/doug/logs/S5UK_PY C:\Users\douglas.nguyen\Documents\logs")
+    hostname = socket.gethostname()
+    ip_address = get_ip()
+    print(f"IP Address: {ip_address}")
+    username = getpass.getuser()
+    remote.execute_cmd_git(f"scp -r {remote_path}{project}/{MBSN}_{qpn}_logs/ {username}@{ip_address}:/~")
+
+            #remote.execute_cmd_pxe([f"scp -r {log} {user}@{gitServer2}:{remote_path}{MBSN}_logs/")
+            #print (dir, dir_month, dir_day)
 
 
 
@@ -118,20 +128,6 @@ def fai():
 
 
 
-"""
-            if months[dir_month] == current_time.month:
-                if dir_day == current_time.day + 1: #the +1 is for decrepancies in dates.
-                    test_logs = remote.execute_cmd_pxe([f"find {dir} -iname {test}"]) #check for test folder
-                    if test_log == None or test_log == "":
-                        pass
-                    else:
-                        folder_dir = []
-                        for log in test_logs:
-                            folder_dir = remote.execute_cmd_pxe([f"find {log} -iname *pass*"]) #only pick pass folders
-                            if folder_dir != [] or folder_dir != None:
-                                remote.execute_cmd_pxe([f"scp -r {log} {user}@{gitServer2}:{remote_path}{MBSN}_logs/")
-                                break
-"""
     #exit()
 
 #
