@@ -8,6 +8,11 @@ from scp import SCPClient, SCPException
 #from log import logger
 import logging
 
+"""
+A lot of this code is adapted from Todd Birchard's Paramiko SSH/SCP Tutorial:
+https://github.com/hackersandslackers/paramiko-tutorial
+"""
+
 class RemoteClient:
     """Client to interact with a remote host via SSH & SCP."""
 
@@ -126,9 +131,10 @@ class RemoteClient:
     def _connect2(self): #we need to go deeper
         """
         This is specifically for the second ssh session into the PXE after bouncing off the git server
+        Taken from:
+        https://stackoverflow.com/questions/18968069/paramiko-port-forwarding-around-a-nat-router/19039769#19039769
+        modified to work within this class
         """
-        #Taken from https://stackoverflow.com/questions/18968069/paramiko-port-forwarding-around-a-nat-router/19039769#19039769
-        #modified to work within this class
         # Set up the proxy (forwarding server) credentials
         proxy_hostname = self.gitServer
         proxy_username = self.user
