@@ -8,7 +8,9 @@ from paramiko.auth_handler import AuthenticationException, SSHException
 from scp import SCPClient, SCPException
 #from log import logger
 import logging
-
+import getpass
+import subprocess
+import sys
 """
 A lot of this code is adapted from Todd Birchard's Fantastic Paramiko SSH/SCP Tutorial:
 https://hackersandslackers.com/automate-ssh-scp-python-paramiko/
@@ -40,7 +42,7 @@ class RemoteClient:
         try:
             print (self.ssh_key_filepath)
             self.ssh_key = RSAKey.from_private_key_file(self.ssh_key_filepath)
-            logging.info(f'Found SSH key at self {self.ssh_key_filepath}')
+            logging.info(f'Found SSH key at {self.ssh_key_filepath}')
         except SSHException as error:
             logging.error(error)
         return self.ssh_key
@@ -49,16 +51,23 @@ class RemoteClient:
         try:
             print(self.ssh_key_filepath,self.gitServer)
             """
-            the below lines are meant for UNIX systems. Which won't' work for our windows systems
+            Original Meant for a UNIX/LINUX system
+            
             os.system(f'ssh-copy-id -i {self.ssh_key_filepath} {self.user}@{self.gitServer}>/dev/null 2>&1')
             os.system(f'ssh-copy-id -i {self.ssh_key_filepath}.pub {self.user}@{self.gitServer}>/dev/null 2>&1')
-            """
+           """
 
-            misc_tools.ssh_copy_id()
-            logging.info(f'{self.ssh_key_filepath} uploaded to {self.gitServer}')
+            #pw getpass.getpass(prompt="What is your git server password to ssh? ")
+            print("SENDING OUR KEY TO THE GIT SERVER!")
+            cmd= f"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe type {self.ssh_key_filepath}.pub | ssh {self.user}@{self.gitServer} \"cat >> ~/.ssh/authorized_keys\""
+            print (cmd)
+            subprocess.call(cmd, shell=True)
+            print("KEY SUCCESSFULLY SENT!")
+
+            #logging.info(f'{self.ssh_key_filepath} uploaded to {self.gitServer}')
         except FileNotFoundError as error:
             logging.error(error)
-
+            sleep(3)
     def _connect(self):
         """
         Open connection to remote host.

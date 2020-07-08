@@ -16,9 +16,11 @@ def fai():
           "STARTING FAI LOG COLLECTION\n"
           "______________________________________________\n")
     MBSN = input("Enter the MBSN or whatever the log files use:  ")
-
+    #MBSN = "AWS00400810"
     project = menu.project_selection()
     pxe = menu.pxe_selection()
+    #project = "S5U_PY"
+    #pxe = "192.168.0.83"
     # pxe_password = menu.pxe_password_selection(pxe)
     # pxe_user = menu.pxe_user_selection() #In case I want to change pxe user later
     pxe_user = "root"

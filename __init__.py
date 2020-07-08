@@ -2,7 +2,7 @@
 from fai import *
 import time
 #from .files import fetch_local_files
-
+import getpass
 import menu
 import sys
 import os
@@ -17,6 +17,7 @@ def main():
     #print (os.path.exists(ssh_key_filepath))
     #print(os.path.exists(remote_path))
     print ("START")
+
     selection = menu.menu_selection()
     print ("SELECTION DONE")
     print (selection)
