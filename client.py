@@ -2,6 +2,7 @@ import sys
 from menu import pxe_password_selection
 import os
 import paramiko
+import misc_tools
 from paramiko import SSHClient, AutoAddPolicy, RSAKey
 from paramiko.auth_handler import AuthenticationException, SSHException
 from scp import SCPClient, SCPException
@@ -9,7 +10,8 @@ from scp import SCPClient, SCPException
 import logging
 
 """
-A lot of this code is adapted from Todd Birchard's Paramiko SSH/SCP Tutorial:
+A lot of this code is adapted from Todd Birchard's Fantastic Paramiko SSH/SCP Tutorial:
+https://hackersandslackers.com/automate-ssh-scp-python-paramiko/
 https://github.com/hackersandslackers/paramiko-tutorial
 """
 
@@ -28,7 +30,7 @@ class RemoteClient:
         self.client = None
         self.scp = None
         self.conn = None
-        #self._upload_ssh_key()
+        self._upload_ssh_key()
 
 
     def _get_ssh_key(self):
@@ -36,6 +38,7 @@ class RemoteClient:
         Fetch locally stored SSH key.
         """
         try:
+            print (self.ssh_key_filepath)
             self.ssh_key = RSAKey.from_private_key_file(self.ssh_key_filepath)
             logging.info(f'Found SSH key at self {self.ssh_key_filepath}')
         except SSHException as error:
@@ -44,8 +47,14 @@ class RemoteClient:
 
     def _upload_ssh_key(self):
         try:
+            print(self.ssh_key_filepath,self.gitServer)
+            """
+            the below lines are meant for UNIX systems. Which won't' work for our windows systems
             os.system(f'ssh-copy-id -i {self.ssh_key_filepath} {self.user}@{self.gitServer}>/dev/null 2>&1')
             os.system(f'ssh-copy-id -i {self.ssh_key_filepath}.pub {self.user}@{self.gitServer}>/dev/null 2>&1')
+            """
+
+            misc_tools.ssh_copy_id()
             logging.info(f'{self.ssh_key_filepath} uploaded to {self.gitServer}')
         except FileNotFoundError as error:
             logging.error(error)
