@@ -6,8 +6,7 @@ import os
 import getpass
 
 
-
-#function below is from https://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
+# function below is from https://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
 def get_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -20,6 +19,7 @@ def get_ip():
         s.close()
     return IP
 
+
 def pxe_user_selection():
     answer = str.lower(input("Is pxe username root? "))
     if answer == "yes" or answer == "y" or answer == "true":
@@ -27,10 +27,6 @@ def pxe_user_selection():
     else:
         pxe_user = getpass.getuser("What is the username you want to use? ")
     return pxe_user
-
-#def qpn_finder():
-
-
 
 
 

@@ -1,7 +1,5 @@
 import datetime
 import sys
-
-sys.path.insert(1, r"./sensitive template files/")
 from config import *
 import menu
 from client import RemoteClient
@@ -9,6 +7,8 @@ import re
 import socket
 import getpass
 import misc_tools
+sys.path.insert(1, r"./sensitive template files/")
+
 
 
 def fai():
@@ -32,9 +32,27 @@ def fai():
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
                           ssh_key_filepath, known_hosts_filepath,
                           remote_path, gitServer2)
+    remote.upload_ssh_key()
     # create the log folder in the gitserver
-    qpn = input("What is the QPN for the Rack? ")
+    #qpn = input("What is the QPN for the Rack? ")
+    qpn = remote.qpn_finder(MBSN, project)
+    remote = RemoteClient(gitServer, pxe, user, pxe_user,
+                          ssh_key_filepath, known_hosts_filepath,
+                          remote_path, gitServer2)
+    print (qpn)
     git_project_path = f"{remote_path}{project}_{MBSN}_{qpn}_logs"
+    #Below is key exchange
+    #putting the git key onto the pxe server
+    git_key = remote.execute_cmd_git(["cat ~/.ssh/id_rsa.pub"])
+    check = remote.execute_cmd_pxe([f"grep {git_key[0]} ~/.ssh/authorized_keys"])
+    if not check:
+        remote.execute_cmd_pxe([f"echo {git_key[0]} >> ~/.ssh/authorized_keys"])
+    #putting the pxe key onto the git server.
+    pxe_key = remote.execute_cmd_pxe(["cat ~/.ssh/id_rsa.pub"])
+    check = remote.execute_cmd_git([f"grep {git_key[0]} ~/.ssh/authorized_keys"])
+    if not check:
+        remote.execute_cmd_git([f"echo {pxe_key[0]} >> ~/.ssh/authorized_keys"])
+
 
     # remote.execute_cmd_git([f'mkdir {remote_path}{project}'])
     remote.execute_cmd_git([f"mkdir {git_project_path}"])
@@ -121,7 +139,8 @@ def fai():
     # below scp needs modification
 
     remote.execute_cmd_git([f"cd {git_project_path}; zip -r {remote_path}{project}_{MBSN}_{qpn}_logs.zip ./"])
-    cmd = f"pscp -r {user}@{gitServer}:{remote_path}{project}_{MBSN}_{qpn}_logs.zip C:\\Users\\douglas.nguyen\\Documents\\logs"
+    cmd = f"pscp -r -scp  {user}@{gitServer}:{remote_path}{project}_{MBSN}_{qpn}_logs.zip C:\\Users\\douglas.nguyen\\Documents\\logs"
+    print (cmd)
     os.system(cmd)
 
     # remote.execute_cmd_git(f"scp -r {remote_path}{project}/{MBSN}_{qpn}_logs/ {username}@{ip_address}:/~")

@@ -32,7 +32,9 @@ class RemoteClient:
         self.client = None
         self.scp = None
         self.conn = None
-        self._upload_ssh_key()
+        self.query = None  # for asking if ssh key already exists
+        #self.upload_ssh_key()manually doing inline now
+
 
 
     def _get_ssh_key(self):
@@ -47,27 +49,37 @@ class RemoteClient:
             logging.error(error)
         return self.ssh_key
 
-    def _upload_ssh_key(self):
-        try:
-            print(self.ssh_key_filepath,self.gitServer)
-            """
-            Original Meant for a UNIX/LINUX system
-            
-            os.system(f'ssh-copy-id -i {self.ssh_key_filepath} {self.user}@{self.gitServer}>/dev/null 2>&1')
-            os.system(f'ssh-copy-id -i {self.ssh_key_filepath}.pub {self.user}@{self.gitServer}>/dev/null 2>&1')
-           """
+    def upload_ssh_key(self):
 
-            #pw getpass.getpass(prompt="What is your git server password to ssh? ")
-            print("SENDING OUR KEY TO THE GIT SERVER!")
-            cmd= f"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe type {self.ssh_key_filepath}.pub | ssh {self.user}@{self.gitServer} \"cat >> ~/.ssh/authorized_keys\""
-            print (cmd)
-            subprocess.call(cmd, shell=True)
-            print("KEY SUCCESSFULLY SENT!")
+        while self.query != "yes":
+            self.query = str.lower(input("Did you already send your ssh to the git server? "))
+            if self.query == "no" or self.query == "n":
+                try:
+                    print(self.ssh_key_filepath,self.gitServer)
+                    """
+                    Original Meant for a UNIX/LINUX system
+                    
+                    os.system(f'ssh-copy-id -i {self.ssh_key_filepath} {self.user}@{self.gitServer}>/dev/null 2>&1')
+                    os.system(f'ssh-copy-id -i {self.ssh_key_filepath}.pub {self.user}@{self.gitServer}>/dev/null 2>&1')
+                   """
 
-            #logging.info(f'{self.ssh_key_filepath} uploaded to {self.gitServer}')
-        except FileNotFoundError as error:
-            logging.error(error)
-            sleep(3)
+
+                    print("SENDING OUR KEY TO THE GIT SERVER!")
+                    cmd = f"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe type {self.ssh_key_filepath}.pub | ssh {self.user}@{self.gitServer} \"cat >> ~/.ssh/authorized_keys\""
+                    print(cmd)
+                    """Have to disable the line below because it causes Pycharm to hang up"""
+                    subprocess.call(cmd, shell=True)
+                    print("KEY SUCCESSFULLY SENT!")
+
+                    #logging.info(f'{self.ssh_key_filepath} uploaded to {self.gitServer}')
+                except FileNotFoundError as error:
+                    logging.error(error)
+                    sleep(3)
+            elif self.query == "yes" or self.query == "y":
+                self.query = "yes"
+                print("Skipping the ssh key copy")
+
+
     def _connect(self):
         """
         Open connection to remote host.
@@ -205,4 +217,19 @@ class RemoteClient:
         if self.conn is None:
             self.conn = self.connect()
         self.scp.get(file)
+
+    def qpn_finder(self, MBSN, project):
+        cmd = f"grep -irl {MBSN} /WIN/{project}/response/config/"
+        dirs = self.execute_cmd_pxe([cmd])
+        qpn = []
+        for dir in dirs:
+            cmd = f"grep -ih \"RACKPN=\" {dir}"
+            # print(cmd)
+            qpn = self.execute_cmd_pxe([cmd])
+            if qpn:
+                for item in qpn:
+                    item = item.replace("RACKPN=", "")
+                    item = item.replace("\r", "")
+                    print(f"{item} WAS FOUND!")
+                    return item
 
