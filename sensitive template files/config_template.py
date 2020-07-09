@@ -13,12 +13,10 @@ from dotenv import load_dotenv
 # Read environment variables
 gitServer = ''#git Server IP goes here
 user = 'doug' #User name goes here
-ssh_key_filepath = "" #path to id_rsa file goes here
-known_hosts_filepath = "" #path to known_hosts file goes here
+ssh_key_filepath = "" #Windows path to id_rsa file goes here
+known_hosts_filepath = "" #Windows path to known_hosts file goes here
+#note, relative paths complain a lot. So going to have to use static paths
 remote_path = '' #path on git server where you weant to save files
-
-
-
 local_file_directory = '' #this is the path to the remote directory to target for file transfers.
 #it is essentially a place to stage your uploads and downloads.
 
