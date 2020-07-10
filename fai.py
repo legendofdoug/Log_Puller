@@ -17,31 +17,42 @@ def fai():
           "______________________________________________\n")
     MBSN = input("Enter the MBSN or whatever the log files use:  ")
     #MBSN = "AWS00400810"
-    project = menu.project_selection()
+    #model = menu.model_selection()
     pxe = menu.pxe_selection()
-    #project = "S5U_PY"
+    #model = "S5U_PY"
     #pxe = "192.168.0.83"
     # pxe_password = menu.pxe_password_selection(pxe)
-    # pxe_user = menu.pxe_user_selection() #In case I want to change pxe user later
+    # pxe_user = menu.pxe_user_selection() #Uncomment this if you want to query user for pxe  user
     pxe_user = "root"
-    print(f"You have entered:\n"
-          f"MBSN: {MBSN}\n"
-          f"Project: {project}\n"
-          f"PXE: {pxe}\n")
+
 
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
-                          ssh_key_filepath, known_hosts_filepath,
-                          remote_path, gitServer2)
+                          ssh_key_filepath, git_ssh_key_filepath,
+                          known_hosts_filepath, remote_path, gitServer2)
     remote.upload_ssh_key()
     # create the log folder in the gitserver
     #qpn = input("What is the QPN for the Rack? ")
-    qpn = remote.qpn_finder(MBSN, project)
+    print("FINDING INFORMATION ABOUT THIS SN!\n"
+          "_____________________________________________\n")
+    important_info = remote.qpn_finder(MBSN)
+    #You have to call this Remoteclient again, because the previous method messes with it. Find out more later
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
-                          ssh_key_filepath, known_hosts_filepath,
-                          remote_path, gitServer2)
+                          ssh_key_filepath, git_ssh_key_filepath,
+                          known_hosts_filepath, remote_path, gitServer2)
+    qpn = important_info["QPN"]
+    model = important_info["MODEL"]
+    racksn = important_info["RACKSN"]
     print (qpn)
-    git_project_path = f"{remote_path}{project}_{MBSN}_{qpn}_logs"
+    print(f"You have entered:\n"
+          f"RACKSN: {racksn}\n"
+          f"MBSN: {MBSN}\n"
+          f"MODEL: {model}\n"
+          f"QPN: {qpn}\n"
+          f"PXE: {pxe}\n")
+    git_model_path = f"{remote_path}{model}_{MBSN}_{qpn}_logs"
+    """
     #Below is key exchange
+    #Currently can't get the key exchange working properly. Working on functions for now. 
     #putting the git key onto the pxe server
     git_key = remote.execute_cmd_git(["cat ~/.ssh/id_rsa.pub"])
     check = remote.execute_cmd_pxe([f"grep {git_key[0]} ~/.ssh/authorized_keys"])
@@ -52,10 +63,10 @@ def fai():
     check = remote.execute_cmd_git([f"grep {git_key[0]} ~/.ssh/authorized_keys"])
     if not check:
         remote.execute_cmd_git([f"echo {pxe_key[0]} >> ~/.ssh/authorized_keys"])
+    """
 
-
-    # remote.execute_cmd_git([f'mkdir {remote_path}{project}'])
-    remote.execute_cmd_git([f"mkdir {git_project_path}"])
+    # remote.execute_cmd_git([f'mkdir {remote_path}{model}'])
+    remote.execute_cmd_git([f"mkdir {git_model_path}"])
     # find the most recent PRETEST LOG
     current_time = datetime.datetime.now()  # find the current time
     year = current_time.year
@@ -90,7 +101,7 @@ def fai():
     }
 
     """
-    This loop will find all folders related to the MBSN/SN of the project selected.
+    This loop will find all folders related to the MBSN/SN of the model selected.
     It will then sort them by most recent and then SCP that entire folder over. (Folder cleanup happens next loop)
     
     
@@ -102,7 +113,7 @@ def fai():
         dirs = []
 
         while dirs == [] or dirs == None:
-            dirs = remote.execute_cmd_pxe([f"find /RACKLOG/{project}/{year}/* -name {MBSN}"])
+            dirs = remote.execute_cmd_pxe([f"find /RACKLOG/{model}/{year}/* -name {MBSN}"])
             if dirs == []:
                 # if we don't find anything
                 print("No results for this year for this SN!")
@@ -111,17 +122,17 @@ def fai():
             my_dates = []
             # sorts by date
 
-            reg = re.compile(f'/RACKLOG/{project}/{year}/...\d\d/{MBSN}')
+            reg = re.compile(f'/RACKLOG/{model}/{year}/...\d\d/{MBSN}')
             # print (reg)
             dirs = [string for string in dirs if re.match(reg, string)]
-            dirs.sort(key=lambda date: datetime.datetime.strptime(date, f'/RACKLOG/{project}/{year}/%b%d/{MBSN}'),
+            dirs.sort(key=lambda date: datetime.datetime.strptime(date, f'/RACKLOG/{model}/{year}/%b%d/{MBSN}'),
                       reverse=True)
             print(dirs)
             pass_dir = []
             for dir in dirs:
                 pass_dir = remote.execute_cmd_pxe([f"find {dir}/{test} -iname *pass*"])
                 if pass_dir != []:
-                    remote.execute_cmd_pxe([f"scp -r {dir}/{test} {user}@{gitServer2}:{git_project_path}"])
+                    remote.execute_cmd_pxe([f"scp -r {dir}/{test} {user}@{gitServer2}:{git_model_path}"])
                     # print (f"scp -r {dir}/{test} {user}@{gitServer2}:{remote_path}{MBSN}_logs/\n")
                     break
                 else:
@@ -133,17 +144,17 @@ def fai():
         And I'd rather copy over too much than too little.
         """
 
-    dirs = remote.execute_cmd_git([f"find {git_project_path} -iname *fail*"])
+    dirs = remote.execute_cmd_git([f"find {git_model_path} -iname *fail*"])
     for dir in dirs:
         remote.execute_cmd_git([f"rm -rf {dir}"])
     # below scp needs modification
 
-    remote.execute_cmd_git([f"cd {git_project_path}; zip -r {remote_path}{project}_{MBSN}_{qpn}_logs.zip ./"])
-    cmd = f"pscp -r -scp  {user}@{gitServer}:{remote_path}{project}_{MBSN}_{qpn}_logs.zip C:\\Users\\douglas.nguyen\\Documents\\logs"
+    remote.execute_cmd_git([f"cd {git_model_path}; zip -r {remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs.zip ./"])
+    cmd = f"scp -r  {user}@{gitServer}:{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs.zip C:\\Users\\douglas.nguyen\\Documents\\logs"
     print (cmd)
     os.system(cmd)
 
-    # remote.execute_cmd_git(f"scp -r {remote_path}{project}/{MBSN}_{qpn}_logs/ {username}@{ip_address}:/~")
+    # remote.execute_cmd_git(f"scp -r {remote_path}{model}/{MBSN}_{qpn}_logs/ {username}@{ip_address}:/~")
 
     # remote.execute_cmd_pxe([f"scp -r {log} {user}@{gitServer2}:{remote_path}{MBSN}_logs/")
     # print (dir, dir_month, dir_day)

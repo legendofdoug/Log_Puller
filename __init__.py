@@ -27,6 +27,7 @@ def main():
         exit()
     else:
         print ("Invalid Selection")
+    input("ALL DONE! Enter anything to quit!")
 
     #func_options[selection]
 

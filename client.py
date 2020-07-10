@@ -1,5 +1,5 @@
 import sys
-from menu import pxe_password_selection
+
 import os
 import paramiko
 import misc_tools
@@ -20,7 +20,7 @@ https://github.com/hackersandslackers/paramiko-tutorial
 class RemoteClient:
     """Client to interact with a remote host via SSH & SCP."""
 
-    def __init__(self, gitServer, pxe, user, pxe_user, ssh_key_filepath, known_hosts_filepath, remote_path, gitServer2):
+    def __init__(self, gitServer, pxe, user, pxe_user, ssh_key_filepath, git_ssh_key_filepath, known_hosts_filepath, remote_path, gitServer2):
         self.gitServer = gitServer #gitserver ip
         self.pxe = pxe #pxe server ip
         self.user = user #gitserver username
@@ -28,6 +28,7 @@ class RemoteClient:
         self.gitServer2 = gitServer2 #second git Server IP for sending files back.
         self.known_hosts_filepath = known_hosts_filepath
         self.ssh_key_filepath = ssh_key_filepath #local windows machine path to the ssh id_rsa
+        self.git_ssh_key_filepath = git_ssh_key_filepath
         self.remote_path = remote_path #place to put logs
         self.client = None
         self.scp = None
@@ -69,8 +70,18 @@ class RemoteClient:
                     print(cmd)
                     """Have to disable the line below because it causes Pycharm to hang up"""
                     subprocess.call(cmd, shell=True)
-                    print("KEY SUCCESSFULLY SENT!")
 
+
+
+                    """
+                    print("KEY SUCCESSFULLY SENT!")
+                    cmd = f"scp {self.user}@{self.gitServer}:~/.ssh/id_rsa {self.git_ssh_key_filepath}"
+                    try:
+                        subprocess.call(cmd)
+                        print("Received key from git!")
+                    except:
+                        print("Couldn't get key from git!")
+                    """
                     #logging.info(f'{self.ssh_key_filepath} uploaded to {self.gitServer}')
                 except FileNotFoundError as error:
                     logging.error(error)
@@ -78,6 +89,8 @@ class RemoteClient:
             elif self.query == "yes" or self.query == "y":
                 self.query = "yes"
                 print("Skipping the ssh key copy")
+
+
 
 
     def _connect(self):
@@ -194,7 +207,8 @@ class RemoteClient:
         self.remote_client.connect(self.pxe,
                                    port=22,
                                    username=self.pxe_user,
-                                   password=pxe_password_selection(self.pxe),
+                                   key_filename=self.git_ssh_key_filepath,
+                                   #password=pxe_password_selection(self.pxe),
                                    sock=channel)
 
         # `remote_client` should now be able to issue commands to the REMOTE box
@@ -218,18 +232,41 @@ class RemoteClient:
             self.conn = self.connect()
         self.scp.get(file)
 
-    def qpn_finder(self, MBSN, project):
-        cmd = f"grep -irl {MBSN} /WIN/{project}/response/config/"
+    def qpn_finder(self, MBSN):
+        #originally for qpn. Now used for model and qpn.
+        cmd = f"grep -rl {MBSN} /WIN/"
         dirs = self.execute_cmd_pxe([cmd])
         qpn = []
+        important_info = {} #this dictionary will be returned with the model name and qpn
+
         for dir in dirs:
-            cmd = f"grep -ih \"RACKPN=\" {dir}"
+            cmd = f"grep -h \"RACKPN=\" {dir}"
             # print(cmd)
             qpn = self.execute_cmd_pxe([cmd])
             if qpn:
-                for item in qpn:
-                    item = item.replace("RACKPN=", "")
-                    item = item.replace("\r", "")
-                    print(f"{item} WAS FOUND!")
-                    return item
+                item = qpn[0]
+                item = item.replace("RACKPN=", "")
+                item = item.replace("\r", "")
+                print(f"{item} WAS FOUND!")
+                important_info["QPN"] = item
+            cmd = f"grep -ih \"RACKSN=\" {dir}"
+            # print(cmd)
+            racksn = self.execute_cmd_pxe([cmd])
+            if racksn:
+                item = racksn[0]
+                item = item.replace("RACKSN=", "")
+                item = item.replace("\r", "")
+                print(f"{racksn} WAS FOUND!")
+                important_info["RACKSN"] = item
+            cmd = f"grep -ih \"MODEL=\" {dir}"
+            # print(cmd)
+            model = self.execute_cmd_pxe([cmd])
+            if model:
+                item = model[0]
+                item = item.replace("MODEL=", "")
+                item = item.replace("\r", "")
+                print(f"{item} WAS FOUND!")
+                important_info["MODEL"] = item
+                return important_info
+
 
