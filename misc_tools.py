@@ -20,7 +20,7 @@ def get_ip():
     return IP
 
 
-def pxe_user_selection():
+def pxe_user_selection(): #will only be used if we see a pxe that doesn't use root
     answer = str.lower(input("Is pxe username root? "))
     if answer == "yes" or answer == "y" or answer == "true":
         pxe_user = "root"

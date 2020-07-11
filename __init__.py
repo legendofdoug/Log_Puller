@@ -12,15 +12,7 @@ from time import sleep
 
 
 def main():
-    #Initialize the remote client session and execute actions.
-    #print (host, user, ssh_key_filepath, remote_path)
-    #print (os.path.exists(ssh_key_filepath))
-    #print(os.path.exists(remote_path))
-    print ("START")
-
     selection = menu.menu_selection()
-    print ("SELECTION DONE")
-    print (selection)
     if selection == "1":
         fai()
     elif selection == "q" or selection == "quit":
@@ -29,16 +21,7 @@ def main():
         print ("Invalid Selection")
     input("ALL DONE! Enter anything to quit!")
 
-    #func_options[selection]
 
-
-
-    #dir = input("What is the directory you want? ")
-
-    #r:wemote.execute_cmd(f"ls {dir}")
-    #list_files(remote, dir)
-    #time.sleep(5)
-    #test again
 
 
 

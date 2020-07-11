@@ -3,55 +3,46 @@ import sys
 from config import *
 import menu
 from client import RemoteClient
-import re
-import socket
-import getpass
+# import getpass
 import misc_tools
-sys.path.insert(1, r"./sensitive template files/")
-
+from subprocess import call
+import re
 
 
 def fai():
     print("______________________________________________\n"
           "STARTING FAI LOG COLLECTION\n"
           "______________________________________________\n")
-    MBSN = input("Enter the MBSN or whatever the log files use:  ")
-    #MBSN = "AWS00400810"
-    #model = menu.model_selection()
-    pxe = menu.pxe_selection()
-    #model = "S5U_PY"
-    #pxe = "192.168.0.83"
-    # pxe_password = menu.pxe_password_selection(pxe)
-    # pxe_user = menu.pxe_user_selection() #Uncomment this if you want to query user for pxe  user
+    racksn = input("Enter the RACK SN: ")
+    pxe = menu.pxe_selection()  # must be filled in by user in the menu.py
     pxe_user = "root"
-
+    # pxe_user = menu.pxe_user_selection() #Uncomment this if you want to query user for pxe  user
 
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
                           ssh_key_filepath, git_ssh_key_filepath,
                           known_hosts_filepath, remote_path, gitServer2)
-    remote.upload_ssh_key()
-    # create the log folder in the gitserver
-    #qpn = input("What is the QPN for the Rack? ")
-    print("FINDING INFORMATION ABOUT THIS SN!\n"
-          "_____________________________________________\n")
-    important_info = remote.qpn_finder(MBSN)
-    #You have to call this Remoteclient again, because the previous method messes with it. Find out more later
+    # remote.upload_ssh_key() #currently not working properly
+
+    # qpn = input("What is the QPN for the Rack? ")
+    print("FINDING INFORMATION ABOUT THIS SN!\n")
+    important_info = remote.qpn_finder(racksn)
+    # You have to call this Remoteclient again, because the previous method messes with it. Find out more later
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
                           ssh_key_filepath, git_ssh_key_filepath,
                           known_hosts_filepath, remote_path, gitServer2)
-    qpn = important_info["QPN"]
+    qpn = important_info["RACKPN"]
     model = important_info["MODEL"]
-    racksn = important_info["RACKSN"]
-    print (qpn)
+    MBSN = important_info["MLBSN"]
+    print(qpn)
     print(f"You have entered:\n"
           f"RACKSN: {racksn}\n"
-          f"MBSN: {MBSN}\n"
+          f"MLBSN: {MBSN}\n"
           f"MODEL: {model}\n"
           f"QPN: {qpn}\n"
           f"PXE: {pxe}\n")
-    git_model_path = f"{remote_path}{model}_{MBSN}_{qpn}_logs"
+    git_model_path = f"{remote_path}{model}_{qpn}_logs"
     """
-    #Below is key exchange
+    #Below is key exchange. Will likely move it later
     #Currently can't get the key exchange working properly. Working on functions for now. 
     #putting the git key onto the pxe server
     git_key = remote.execute_cmd_git(["cat ~/.ssh/id_rsa.pub"])
@@ -65,9 +56,7 @@ def fai():
         remote.execute_cmd_git([f"echo {pxe_key[0]} >> ~/.ssh/authorized_keys"])
     """
 
-    # remote.execute_cmd_git([f'mkdir {remote_path}{model}'])
-    remote.execute_cmd_git([f"mkdir {git_model_path}"])
-    # find the most recent PRETEST LOG
+    remote.execute_cmd_git([f"mkdir {git_model_path}"])  # create the log folder in the gitserver
     current_time = datetime.datetime.now()  # find the current time
     year = current_time.year
     print(current_time.month, current_time.day)
@@ -103,18 +92,16 @@ def fai():
     """
     This loop will find all folders related to the MBSN/SN of the model selected.
     It will then sort them by most recent and then SCP that entire folder over. (Folder cleanup happens next loop)
-    
-    
     """
 
-    tests = ["PRETEST", "RUNIN", "FST"]
+    tests = ["PRETEST", "RUNIN", "NETTEST", "FST"]
     for test in tests:  # cycle through the tests to find each one.
         # done_flag = False #flag for breaking out of loop
         dirs = []
 
-        while dirs == [] or dirs == None:
+        while not dirs: #so long as the directory array is empty
             dirs = remote.execute_cmd_pxe([f"find /RACKLOG/{model}/{year}/* -name {MBSN}"])
-            if dirs == []:
+            if not dirs:
                 # if we don't find anything
                 print("No results for this year for this SN!")
                 MBSN = input("Enter in a different SN: ")
@@ -131,8 +118,8 @@ def fai():
             pass_dir = []
             for dir in dirs:
                 pass_dir = remote.execute_cmd_pxe([f"find {dir}/{test} -iname *pass*"])
-                if pass_dir != []:
-                    remote.execute_cmd_pxe([f"scp -r {dir}/{test} {user}@{gitServer2}:{git_model_path}"])
+                if pass_dir:
+                    remote.execute_cmd_git([f"scp -r {pxe_user}@{pxe}:{dir}/{test} {git_model_path}"])
                     # print (f"scp -r {dir}/{test} {user}@{gitServer2}:{remote_path}{MBSN}_logs/\n")
                     break
                 else:
@@ -147,18 +134,9 @@ def fai():
     dirs = remote.execute_cmd_git([f"find {git_model_path} -iname *fail*"])
     for dir in dirs:
         remote.execute_cmd_git([f"rm -rf {dir}"])
-    # below scp needs modification
 
     remote.execute_cmd_git([f"cd {git_model_path}; zip -r {remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs.zip ./"])
-    cmd = f"scp -r  {user}@{gitServer}:{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs.zip C:\\Users\\douglas.nguyen\\Documents\\logs"
-    print (cmd)
-    os.system(cmd)
-
-    # remote.execute_cmd_git(f"scp -r {remote_path}{model}/{MBSN}_{qpn}_logs/ {username}@{ip_address}:/~")
-
-    # remote.execute_cmd_pxe([f"scp -r {log} {user}@{gitServer2}:{remote_path}{MBSN}_logs/")
-    # print (dir, dir_month, dir_day)
-
-    # scan each dir for the test, if found scp it out. then break with the flag or break
-    # if not found repeat with next month
-    print("All Done!")
+    cmd = f"scp -r  {user}@{gitServer}:{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs.zip {local_file_directory}"
+    print(cmd)
+    call(cmd)
+    print("FAI All Done!")

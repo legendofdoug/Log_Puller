@@ -232,32 +232,37 @@ class RemoteClient:
             self.conn = self.connect()
         self.scp.get(file)
 
-    def qpn_finder(self, MBSN):
+    def qpn_finder(self, racksn):
         #originally for qpn. Now used for model and qpn.
-        cmd = f"grep -rl {MBSN} /WIN/"
+        cmd = f"grep -rl {racksn} /WIN/"
         dirs = self.execute_cmd_pxe([cmd])
         qpn = []
         important_info = {} #this dictionary will be returned with the model name and qpn
-
+        traits = ("RACKPN", "MLBSN", "MODEL")
         for dir in dirs:
-            cmd = f"grep -h \"RACKPN=\" {dir}"
+
+            for trait in traits:
+                cmd = f"grep -h \"{trait}=\" {dir}"
+                # print(cmd)
+                qpn = self.execute_cmd_pxe([cmd])
+                if qpn:
+                    item = qpn[0]
+                    item = item.replace(f"{trait}=", "")
+                    item = item.replace("\r", "")
+                    print(f"{item} WAS FOUND!")
+                    important_info[trait] = item
+            return important_info
+            """
+            cmd = f"grep -ih \"MLBSN=\" {dir}"
             # print(cmd)
-            qpn = self.execute_cmd_pxe([cmd])
-            if qpn:
-                item = qpn[0]
-                item = item.replace("RACKPN=", "")
-                item = item.replace("\r", "")
-                print(f"{item} WAS FOUND!")
-                important_info["QPN"] = item
-            cmd = f"grep -ih \"RACKSN=\" {dir}"
-            # print(cmd)
-            racksn = self.execute_cmd_pxe([cmd])
+            pdnum = self.execute_cmd_pxe([cmd])
             if racksn:
                 item = racksn[0]
-                item = item.replace("RACKSN=", "")
+                item = item.replace("PDNUM=", "")
                 item = item.replace("\r", "")
-                print(f"{racksn} WAS FOUND!")
-                important_info["RACKSN"] = item
+                print(f"{pdnum} WAS FOUND!")
+                important_info["PDNUM"] = item
+            
             cmd = f"grep -ih \"MODEL=\" {dir}"
             # print(cmd)
             model = self.execute_cmd_pxe([cmd])
@@ -268,5 +273,6 @@ class RemoteClient:
                 print(f"{item} WAS FOUND!")
                 important_info["MODEL"] = item
                 return important_info
+            """
 
 
