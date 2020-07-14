@@ -142,7 +142,7 @@ class RemoteClient:
             for line in response:
                 #print(f'INPUT: {cmd} | OUTPUT: {line}')
                 line = line.replace("\n", "")
-                print (line)
+                #print (line)
                 output.append(line)
         return (output)
 
@@ -167,7 +167,7 @@ class RemoteClient:
             for line in response:
                 #print(f'INPUT: {cmd} | OUTPUT: {line}')
                 line = line.replace("\n", "")
-                print(line)
+                #print(line)
                 output.append(line)
         return (output)
 
@@ -238,7 +238,7 @@ class RemoteClient:
         dirs = self.execute_cmd_pxe([cmd])
         qpn = []
         important_info = {} #this dictionary will be returned with the model name and qpn
-        traits = ("RACKPN", "MLBSN", "MODEL")
+        traits = ("RACKPN", "MLBSN", "MODEL", "PDNUM")
         for dir in dirs:
 
             for trait in traits:

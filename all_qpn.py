@@ -1,4 +1,3 @@
-import datetime
 import sys
 from config import *
 import menu
@@ -9,9 +8,9 @@ from subprocess import call
 import re
 
 
-def fai():
+def all_logs(parameter):
     print("______________________________________________\n"
-          "STARTING FAI LOG COLLECTION\n"
+          "STARTING ALL LOG COLLECTION\n"
           "______________________________________________\n")
     racksn = input("Enter the RACK SN: ")
     pxe = menu.pxe_selection()  # must be filled in by user in the menu.py
@@ -26,8 +25,6 @@ def fai():
     # qpn = input("What is the QPN for the Rack? ")
     print("FINDING INFORMATION ABOUT THIS SN!\n")
     important_info = remote.qpn_finder(racksn)
-
-
     # You have to call this Remoteclient again, because the previous method messes with it. Find out more later
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
                           ssh_key_filepath, git_ssh_key_filepath,
@@ -37,58 +34,8 @@ def fai():
     MBSN = important_info["MLBSN"]
     pdnum = important_info["PDNUM"]
     git_model_path = f"{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs"
-    """
-    #Below is key exchange. Will likely move it later
-    #Currently can't get the key exchange working properly. Working on functions for now. 
-    #putting the git key onto the pxe server
-    git_key = remote.execute_cmd_git(["cat ~/.ssh/id_rsa.pub"])
-    check = remote.execute_cmd_pxe([f"grep {git_key[0]} ~/.ssh/authorized_keys"])
-    if not check:
-        remote.execute_cmd_pxe([f"echo {git_key[0]} >> ~/.ssh/authorized_keys"])
-    #putting the pxe key onto the git server.
-    pxe_key = remote.execute_cmd_pxe(["cat ~/.ssh/id_rsa.pub"])
-    check = remote.execute_cmd_git([f"grep {git_key[0]} ~/.ssh/authorized_keys"])
-    if not check:
-        remote.execute_cmd_git([f"echo {pxe_key[0]} >> ~/.ssh/authorized_keys"])
-    """
+    remote.execute_cmd_git([f"mkdir {git_model_path}"])
 
-    remote.execute_cmd_git([f"mkdir {git_model_path}"])  # create the log folder in the gitserver
-    current_time = datetime.datetime.now()  # find the current time
-    year = current_time.year
-    print(current_time.month, current_time.day)
-    months = {
-        "Jan": 1,
-        "Feb": 2,
-        "Mar": 3,
-        "Apr": 4,
-        "May": 5,
-        "Jun": 6,
-        "Jul": 7,
-        "Aug": 8,
-        "Sep": 9,
-        "Oct": 10,
-        "Nov": 11,
-        "Dec": 12
-    }
-    months_r = {
-        1: "Jan",
-        2: "Feb",
-        3: "Mar",
-        4: "Apr",
-        5: "May",
-        6: "Jun",
-        7: "Jul",
-        8: "Aug",
-        9: "Sep",
-        10: "Oct",
-        11: "Nov",
-        12: "Dec",
-    }
-
-    """
-    This loop will find all folders related to the MBSN/SN of the model selected.
-    It will then sort them by most recent and then SCP that entire folder over. (Folder cleanup happens next loop)
-    """
     dirs = remote.execute_cmd_pxe([f"grep -rl {pdnum} /RACKLOG/{model}/{year}/*"])
     for dir in dirs:
         dir = dir.replace(f"/RACKLOG/{model}/{year}/", "")
@@ -103,25 +50,20 @@ def fai():
           f"PDNUM: {pdnum}\n"
           f"PXE: {pxe}\n"
           f"CHASSIS SN: {chassissn}")
-
-
     tests = ["PRETEST", "RUNIN", "NETTEST", "FST"]
     for test in tests:  # cycle through the tests to find each one.
         # done_flag = False #flag for breaking out of loop
         dirs = []
         SNS = [MBSN, pdnum, chassissn]
-        while not dirs: #so long as the directory array is empty
+        while not dirs:  # so long as the directory array is empty
             for sn in SNS:
                 dirs = remote.execute_cmd_pxe([f"find /RACKLOG/{model}/{year}/* -name {sn}"])
-                print (sn)
-                print (dirs)
-                if dirs: #if something is found
+                print(sn)
+                print(dirs)
+                if dirs:  # if something is found
                     break
             print("Broke out of loop")
             print(dirs)
-
-
-
 
             reg = re.compile(f'/RACKLOG/{model}/{year}/...\d\d/{sn}')
             dirs = [string for string in dirs if re.match(reg, string)]
@@ -155,4 +97,7 @@ def fai():
         cmd = f"scp -r  {user}@{gitServer}:{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs {local_file_directory}"
     print(cmd)
     call(cmd)
-    print("FAI All Done!")
+
+def questions():
+    passorfail = str.lower(input("Do you need passed logs, failed logs or both?"))
+    if passorfail not in ["pass", "fail", "failed", "both", "all"]
