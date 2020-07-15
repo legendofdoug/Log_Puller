@@ -20,7 +20,7 @@ https://github.com/hackersandslackers/paramiko-tutorial
 class RemoteClient:
     """Client to interact with a remote host via SSH & SCP."""
 
-    def __init__(self, gitServer, pxe, user, pxe_user, ssh_key_filepath, git_ssh_key_filepath, known_hosts_filepath, remote_path, gitServer2):
+    def __init__(self, gitServer, pxe, user, pxe_user, ssh_key_filepath, git_ssh_key_filepath, known_hosts_filepath, remote_path, gitServer2, pw1, pw2):
         self.gitServer = gitServer #gitserver ip
         self.pxe = pxe #pxe server ip
         self.user = user #gitserver username
@@ -34,6 +34,9 @@ class RemoteClient:
         self.scp = None
         self.conn = None
         self.query = None  # for asking if ssh key already exists
+        print("What is Git?")
+        self.pw1 = pw1
+        self.pw2 = pw2
         #self.upload_ssh_key()manually doing inline now
 
 
@@ -105,7 +108,8 @@ class RemoteClient:
                 self.client.connect(
                     self.gitServer,
                     username=self.user,
-                    key_filename=self.ssh_key_filepath,
+                    #key_filename=self.ssh_key_filepath,
+                    password = self.pw1,
                     look_for_keys=True,
                     timeout=5000
                 )
@@ -182,7 +186,7 @@ class RemoteClient:
         proxy_hostname = self.gitServer
         proxy_username = self.user
         proxy_port = 22
-
+        #pw1 = getpass.getpass("What is the Git Password? ")
         # Instantiate a client and connect to the proxy server
         self.proxy_client = SSHClient()
         self.proxy_client.load_host_keys(self.known_hosts_filepath)
@@ -190,16 +194,18 @@ class RemoteClient:
             proxy_hostname,
             port=proxy_port,
             username=proxy_username,
-            key_filename=self.ssh_key_filepath
+            #key_filename=self.ssh_key_filepath
+            password=self.pw1
         )
 
         # Get the client's transport and open a `direct-tcpip` channel passing
         # the destination hostname:port and the local hostname:port
+
         transport = self.proxy_client.get_transport()
         dest_addr = (self.pxe, 22)
         local_addr = ('127.0.0.1', 1234)
         channel = transport.open_channel("direct-tcpip", dest_addr, local_addr)
-
+        #pw2 = getpass.getpass("What is the PXE Password? ")
         # Create a NEW client and pass this channel to it as the `sock` (along with
         # whatever credentials you need to auth into your REMOTE box
         self.remote_client = SSHClient()
@@ -207,8 +213,8 @@ class RemoteClient:
         self.remote_client.connect(self.pxe,
                                    port=22,
                                    username=self.pxe_user,
-                                   key_filename=self.git_ssh_key_filepath,
-                                   #password=pxe_password_selection(self.pxe),
+                                   #key_filename=self.git_ssh_key_filepath,
+                                   password = self.pw2,
                                    sock=channel)
 
         # `remote_client` should now be able to issue commands to the REMOTE box
@@ -278,4 +284,6 @@ class RemoteClient:
                 return important_info
             """
 
+
+            
 

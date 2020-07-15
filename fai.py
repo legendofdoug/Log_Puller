@@ -3,7 +3,7 @@ import sys
 from config import *
 import menu
 from client import RemoteClient
-# import getpass
+import getpass
 import misc_tools
 from subprocess import call
 import re
@@ -17,10 +17,11 @@ def fai():
     pxe = menu.pxe_selection()  # must be filled in by user in the menu.py
     pxe_user = "root"
     # pxe_user = menu.pxe_user_selection() #Uncomment this if you want to query user for pxe  user
-
+    pw1 = getpass.getpass("What is the Git Password? ")
+    pw2 = getpass.getpass("What is the PXE Password? ")
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
                           ssh_key_filepath, git_ssh_key_filepath,
-                          known_hosts_filepath, remote_path, gitServer2)
+                          known_hosts_filepath, remote_path, gitServer2, pw1, pw2)
     # remote.upload_ssh_key() #currently not working properly
 
     # qpn = input("What is the QPN for the Rack? ")
@@ -38,7 +39,7 @@ def fai():
     # You have to call this Remoteclient again, because the previous method messes with it. Find out more later
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
                           ssh_key_filepath, git_ssh_key_filepath,
-                          known_hosts_filepath, remote_path, gitServer2)
+                          known_hosts_filepath, remote_path, gitServer2, pw1, pw2)
     qpn = important_info["RACKPN"]
     model = important_info["MODEL"]
     MBSN = important_info["MLBSN"]
