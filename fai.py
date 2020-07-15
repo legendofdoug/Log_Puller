@@ -26,7 +26,14 @@ def fai():
     # qpn = input("What is the QPN for the Rack? ")
     print("FINDING INFORMATION ABOUT THIS SN!\n")
     important_info = remote.qpn_finder(racksn)
-
+    print(important_info)
+    while not important_info:
+        print(important_info)
+        print("I couldn't find anything at this PXE\n"
+              "Please Pick a different PXE: \n")
+        pxe = menu.pxe_selection()
+        remote.change_pxe(pxe)
+        important_info = remote.qpn_finder(racksn)
 
     # You have to call this Remoteclient again, because the previous method messes with it. Find out more later
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
@@ -104,24 +111,20 @@ def fai():
           f"PXE: {pxe}\n"
           f"CHASSIS SN: {chassissn}")
 
-
     tests = ["PRETEST", "RUNIN", "NETTEST", "FST"]
     for test in tests:  # cycle through the tests to find each one.
         # done_flag = False #flag for breaking out of loop
         dirs = []
         SNS = [MBSN, pdnum, chassissn]
-        while not dirs: #so long as the directory array is empty
+        while not dirs:  # so long as the directory array is empty
             for sn in SNS:
                 dirs = remote.execute_cmd_pxe([f"find /RACKLOG/{model}/{year}/* -name {sn}"])
-                print (sn)
-                print (dirs)
-                if dirs: #if something is found
+                print(sn)
+                print(dirs)
+                if dirs:  # if something is found
                     break
             print("Broke out of loop")
             print(dirs)
-
-
-
 
             reg = re.compile(f'/RACKLOG/{model}/{year}/...\d\d/{sn}')
             dirs = [string for string in dirs if re.match(reg, string)]

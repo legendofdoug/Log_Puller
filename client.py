@@ -142,7 +142,7 @@ class RemoteClient:
             for line in response:
                 #print(f'INPUT: {cmd} | OUTPUT: {line}')
                 line = line.replace("\n", "")
-                #print (line)
+                print (line)
                 output.append(line)
         return (output)
 
@@ -231,6 +231,9 @@ class RemoteClient:
         if self.conn is None:
             self.conn = self.connect()
         self.scp.get(file)
+
+    def change_pxe(self, pxe):
+        self.pxe = pxe
 
     def qpn_finder(self, racksn):
         #originally for qpn. Now used for model and qpn.
