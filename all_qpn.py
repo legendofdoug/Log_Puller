@@ -49,7 +49,10 @@ def all_logs(parameter):
           f"QPN: {qpn}\n"
           f"PDNUM: {pdnum}\n"
           f"PXE: {pxe}\n"
-          f"CHASSIS SN: {chassissn}")
+          f"CHASSIS SN: {chassissn}\n"
+          f"zip: {zip_this}\n"
+          )
+
     tests = ["PRETEST", "RUNIN", "NETTEST", "FST"]
     for test in tests:  # cycle through the tests to find each one.
         # done_flag = False #flag for breaking out of loop

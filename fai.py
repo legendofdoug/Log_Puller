@@ -7,18 +7,26 @@ import getpass
 import misc_tools
 from subprocess import call
 import re
+import tkinter as tk
+from tkinter import messagebox
+def fai(gui_important_infos):
 
-
-def fai():
-    print("______________________________________________\n"
+    """print("______________________________________________\n"
           "STARTING FAI LOG COLLECTION\n"
           "______________________________________________\n")
     racksn = input("Enter the RACK SN: ")
-    pxe = menu.pxe_selection()  # must be filled in by user in the menu.py
+    pxe = menu.pxe_selection()  # must be filled in by user in the menu.py"""
+
     pxe_user = "root"
-    # pxe_user = menu.pxe_user_selection() #Uncomment this if you want to query user for pxe  user
+    pxe = gui_important_infos["pxe"]
+    racksn = gui_important_infos["rack_SN"]
+    pw1 = gui_important_infos["gitpw"]
+    pw2 = gui_important_infos["pxepw"]
+    zip_this = gui_important_infos["zip"]
+
+    """# pxe_user = menu.pxe_user_selection() #Uncomment this if you want to query user for pxe  user
     pw1 = getpass.getpass("What is the Git Password? ")
-    pw2 = getpass.getpass("What is the PXE Password? ")
+    pw2 = getpass.getpass("What is the PXE Password? ")"""
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
                           ssh_key_filepath, git_ssh_key_filepath,
                           known_hosts_filepath, remote_path, gitServer2, pw1, pw2)
@@ -28,13 +36,17 @@ def fai():
     print("FINDING INFORMATION ABOUT THIS SN!\n")
     important_info = remote.qpn_finder(racksn)
     print(important_info)
-    while not important_info:
+    if not important_info:
         print(important_info)
-        print("I couldn't find anything at this PXE\n"
-              "Please Pick a different PXE: \n")
-        pxe = menu.pxe_selection()
-        remote.change_pxe(pxe)
-        important_info = remote.qpn_finder(racksn)
+        tkinter.messagebox.showerror(title="Oh Snap!",
+                                     message="I couldn't find anything at this PXE\n"
+                                             "Please Pick a different PXE: \n" )
+        exit()
+        #print("I couldn't find anything at this PXE\n"
+        #     "Please Pick a different PXE: \n")
+        #pxe = menu.pxe_selection()
+        #remote.change_pxe(pxe)
+        #important_info = remote.qpn_finder(racksn)
 
     # You have to call this Remoteclient again, because the previous method messes with it. Find out more later
     remote = RemoteClient(gitServer, pxe, user, pxe_user,
@@ -151,12 +163,15 @@ def fai():
     for dir in dirs:
         remote.execute_cmd_git([f"rm -rf {dir}"])
 
-    zip = str.lower(input("Do you want to zip?"))
-    if zip == "y" or zip == "yes":
+    #zip = str.lower(input("Do you want to zip?"))
+    print (zip_this)
+    if zip_this == 1:
         remote.execute_cmd_git([f"cd {git_model_path}; zip -r {remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs.zip ./"])
         cmd = f"scp -r  {user}@{gitServer}:{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs.zip {local_file_directory}"
     else:
         cmd = f"scp -r  {user}@{gitServer}:{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs {local_file_directory}"
     print(cmd)
     call(cmd)
+    messagebox.showinfo(title="Success!", message="FAI is done.")
     print("FAI All Done!")
+

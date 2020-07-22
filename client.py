@@ -34,7 +34,6 @@ class RemoteClient:
         self.scp = None
         self.conn = None
         self.query = None  # for asking if ssh key already exists
-        print("What is Git?")
         self.pw1 = pw1
         self.pw2 = pw2
         #self.upload_ssh_key()manually doing inline now
