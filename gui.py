@@ -2,6 +2,8 @@
 
 import tkinter as tk
 import fai
+import menu
+import config
 
 # class log_gui(tk.Frame):
 #    def __init__(self, master = None):
@@ -49,8 +51,7 @@ class log_gui():
         self.txt_log_area.columnconfigure(3, weight=1, minsize=75)
         self.txt_log_area.rowconfigure(3, weight=1, minsize=70)
 
-        choices = ['Custom', '192.168.0.81', '192.168.0.82', '192.168.0.83', '192.168.0.84',
-                   '192.168.0.101', '192.168.0.102', '192.168.0.123', '192.168.0.124']
+        choices = config.choices
 
         self.variable = tk.StringVar(self.root)
         self.variable.set(choices[0])
