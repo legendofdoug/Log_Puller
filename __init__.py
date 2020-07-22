@@ -1,16 +1,8 @@
 #!/usr/bin/python
-from fai import *
-import time
-#from .files import fetch_local_files
-import getpass
-import menu
-import sys
-import os
-from os import walk
-import pysftp
-from time import sleep
+
+
 import gui
-import Tkinter as tk
+import tkinter as tk
 
 def main():
     while True:
@@ -27,14 +19,6 @@ def main():
         print ("Invalid Selection")
 
     input("ALL DONE! Enter anything to quit!")"""
-
-
-
-
-
-
-
-
 
 main()
 

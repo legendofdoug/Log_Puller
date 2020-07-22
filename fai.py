@@ -1,11 +1,6 @@
 import datetime
-import sys
 from config import *
-import menu
 from client import RemoteClient
-import getpass
-import misc_tools
-from subprocess import call
 import re
 import tkinter as tk
 from tkinter import messagebox
@@ -160,20 +155,25 @@ def fai(gui_important_infos):
         It's technically inefficient, but I'm too lazy to change it. 
         And I'd rather copy over too much than too little.
         """
-
+    
     dirs = remote.execute_cmd_git([f"find {git_model_path} -iname *fail*"])
     for dir in dirs:
         remote.execute_cmd_git([f"rm -rf {dir}"])
 
     #zip = str.lower(input("Do you want to zip?"))
-    print (zip_this)
+
+    file_path=f"{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs"
     if zip_this == 1:
         remote.execute_cmd_git([f"cd {git_model_path}; zip -r {remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs.zip ./"])
-        cmd = f"scp -r  {user}@{gitServer}:{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs.zip {local_file_directory}"
+        #cmd = f"scp -r  {user}@{gitServer}:{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs.zip {local_file_directory}"
+        remote.download_file(file_path+".zip", local_file_directory)
     else:
-        cmd = f"scp -r  {user}@{gitServer}:{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs {local_file_directory}"
-    print(cmd)
-    call(cmd)
+        #cmd = f"scp -r  {user}@{gitServer}:{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs {local_file_directory}"
+        remote.bulk_download_file(file_path,local_file_directory)
+
+    #print(cmd)
+    #call(cmd)
+    remote.disconnect()
     messagebox.showinfo(title="Success!", message="FAI is done.")
     print("FAI All Done!")
 

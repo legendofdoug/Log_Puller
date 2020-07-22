@@ -1,5 +1,3 @@
-import sys
-
 import os
 import paramiko
 import misc_tools
@@ -10,7 +8,8 @@ from scp import SCPClient, SCPException
 import logging
 import getpass
 import subprocess
-import sys
+
+
 """
 A lot of this code is adapted from Todd Birchard's Fantastic Paramiko SSH/SCP Tutorial:
 https://hackersandslackers.com/automate-ssh-scp-python-paramiko/
@@ -231,11 +230,17 @@ class RemoteClient:
         uploads = [self._upload_single_file(file) for file in files]
         logging.info(f'Finished uploading {len(uploads)} files to {self.remote_path} on {self.gitServer}')
 
-    def download_file(self, file):
+    def download_file(self, file, destination):
         """Download file from remote host."""
         if self.conn is None:
             self.conn = self.connect()
-        self.scp.get(file)
+        self.scp.get(file, local_path=destination)
+
+    def bulk_download_file(self, file, destination):
+        """Download file from remote host."""
+        if self.conn is None:
+            self.conn = self.connect()
+        self.scp.get(file, local_path=destination, recursive=True)
 
     def change_pxe(self, pxe):
         self.pxe = pxe
@@ -260,28 +265,7 @@ class RemoteClient:
                     print(f"{item} WAS FOUND!")
                     important_info[trait] = item
             return important_info
-            """
-            cmd = f"grep -ih \"MLBSN=\" {dir}"
-            # print(cmd)
-            pdnum = self.execute_cmd_pxe([cmd])
-            if racksn:
-                item = racksn[0]
-                item = item.replace("PDNUM=", "")
-                item = item.replace("\r", "")
-                print(f"{pdnum} WAS FOUND!")
-                important_info["PDNUM"] = item
-            
-            cmd = f"grep -ih \"MODEL=\" {dir}"
-            # print(cmd)
-            model = self.execute_cmd_pxe([cmd])
-            if model:
-                item = model[0]
-                item = item.replace("MODEL=", "")
-                item = item.replace("\r", "")
-                print(f"{item} WAS FOUND!")
-                important_info["MODEL"] = item
-                return important_info
-            """
+
 
 
             
