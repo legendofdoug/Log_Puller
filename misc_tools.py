@@ -4,7 +4,7 @@ from subprocess import call
 from config import *
 import os
 import getpass
-
+"""This file is no llonger used, but is being kept just in case I need it."""
 
 # function below is from https://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
 def get_ip():

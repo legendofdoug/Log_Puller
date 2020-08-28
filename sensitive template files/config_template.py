@@ -19,5 +19,5 @@ known_hosts_filepath = "" #Windows path to known_hosts file goes here
 remote_path = '' #path on git server where you weant to save files
 local_file_directory = '' #this is the path to the remote directory to target for file transfers.
 #it is essentially a place to stage your uploads and downloads.
-
+choices=["Custom", "Add  IPS here"]
 

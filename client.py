@@ -251,7 +251,8 @@ class RemoteClient:
         dirs = self.execute_cmd_pxe([cmd])
         qpn = []
         important_info = {} #this dictionary will be returned with the model name and qpn
-        traits = ("RACKPN", "MLBSN", "MODEL", "PDNUM")
+        #traits = ("RACKPN", "MLBSN", "MODEL", "PDNUM")
+        traits = ("RACKPN", "MLBSN", "MODEL")
         for dir in dirs:
 
             for trait in traits:

@@ -52,7 +52,7 @@ def fai(gui_important_infos):
     qpn = important_info["RACKPN"]
     model = important_info["MODEL"]
     MBSN = important_info["MLBSN"]
-    pdnum = important_info["PDNUM"]
+    #pdnum = important_info["PDNUM"]
     git_model_path = f"{remote_path}{model}_{racksn}_{MBSN}_{qpn}_logs"
     """
     #Below is key exchange. Will likely move it later
@@ -106,7 +106,8 @@ def fai(gui_important_infos):
     This loop will find all folders related to the MBSN/SN of the model selected.
     It will then sort them by most recent and then SCP that entire folder over. (Folder cleanup happens next loop)
     """
-    dirs = remote.execute_cmd_pxe([f"grep -rl {pdnum} /RACKLOG/{model}/{year}/*"])
+    #dirs = remote.execute_cmd_pxe([f"grep -rl {pdnum} /RACKLOG/{model}/{year}/*"])
+    dirs = remote.execute_cmd_pxe([f"grep -rl {MBSN} /RACKLOG/{model}/{year}/*"])
     for dir in dirs:
         dir = dir.replace(f"/RACKLOG/{model}/{year}/", "")
         chassissn = dir[6:20]
@@ -117,7 +118,7 @@ def fai(gui_important_infos):
           f"MLBSN: {MBSN}\n"
           f"MODEL: {model}\n"
           f"QPN: {qpn}\n"
-          f"PDNUM: {pdnum}\n"
+          #f"PDNUM: {pdnum}\n"
           f"PXE: {pxe}\n"
           f"CHASSIS SN: {chassissn}")
 
@@ -125,7 +126,8 @@ def fai(gui_important_infos):
     for test in tests:  # cycle through the tests to find each one.
         # done_flag = False #flag for breaking out of loop
         dirs = []
-        SNS = [MBSN, pdnum, chassissn]
+        #SNS = [MBSN, pdnum, chassissn]
+        SNS = [MBSN, chassissn] #new dropbox system doesn't have PDNUM
         while not dirs:  # so long as the directory array is empty
             for sn in SNS:
                 dirs = remote.execute_cmd_pxe([f"find /RACKLOG/{model}/{year}/* -name {sn}"])
